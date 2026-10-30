@@ -33,7 +33,7 @@
 
 ## 전체 실행 Bash 예시
 
-아래를 제출 디렉터리에서 실행하면 의존성 설치, 데이터 준비, 두 checkpoint의 FID 평가를 순서대로 수행한다. 실행 환경에 호환 가능한 PyTorch/CUDA가 이미 있으면 같은 Python 환경을 `PYTHON`으로 지정한다.
+아래를 제출 디렉터리에서 실행하면 의존성 설치, 데이터 준비, 두 checkpoint의 FID 평가를 순서대로 수행한다. `PokemonData/`가 이미 준비되어 있으면 기존 파일을 사용하고, 없으면 원본 downloader가 KaggleHub로 내려받는다. 실행 환경에 호환 가능한 PyTorch/CUDA가 이미 있으면 같은 Python 환경을 `PYTHON`으로 지정한다.
 
 ```bash
 #!/usr/bin/env bash
@@ -52,7 +52,7 @@ fi
 test -f ./checkpoints/one_nfe.ckpt
 test -f ./checkpoints/few_nfe.ckpt
 
-# 데이터가 없으면 Kaggle dataset을 내려받는다. 이미 있으면 기존 파일을 쓴다.
+# 이미지가 없으면 KaggleHub로 내려받고, 이미 있으면 그대로 사용한다.
 "$PYTHON" download_dataset.py \
   --data_root ./data/pokemon-generation-one-22k
 
@@ -76,7 +76,7 @@ for mode in one_nfe few_nfe; do
 done
 ```
 
-평가기는 클래스별 20장, 총 3,020장을 생성한다. 기준 프로토콜은 batch16, bf16, seed=`42 + batch index`다. 데이터 다운로드가 필요한 경우 Kaggle 접근 권한이 설정되어 있어야 한다. CUDA가 없는 환경에서는 CPU로 실행되며 시간이 더 걸릴 수 있다.
+평가기는 클래스별 20장, 총 3,020장을 생성한다. 기준 프로토콜은 batch16, bf16, seed=`42 + batch index`다. `kagglehub`는 FID 계산에는 관여하지 않지만, 고정 `dataset.py`가 이미지 디렉터리 부재 시 원본 `download_dataset.py`를 통해 자동 다운로드하므로 requirements에 포함한다. `tqdm`도 고정 `evaluate.py`의 진행률 표시 import에 필요하다. CUDA가 없는 환경에서는 CPU로 실행되며 시간이 더 걸릴 수 있다.
 
 ## 파일 구성
 
