@@ -70,13 +70,13 @@ for mode in one_nfe few_nfe; do
     --split_dir ./data/pokemon-generation-one-22k \
     --reference_dir ./results/reference \
     --output_dir ./results/evaluation \
-    --batch_size 16 \
+    --batch_size 32 \
     --num_workers 4 \
     --device "$DEVICE"
 done
 ```
 
-평가기는 클래스별 20장, 총 3,020장을 생성한다. 기준 프로토콜은 batch16, bf16, seed=`42 + batch index`다. `kagglehub`는 FID 계산에는 관여하지 않지만, 고정 `dataset.py`가 이미지 디렉터리 부재 시 원본 `download_dataset.py`를 통해 자동 다운로드하므로 requirements에 포함한다. `tqdm`도 고정 `evaluate.py`의 진행률 표시 import에 필요하다. CUDA가 없는 환경에서는 CPU로 실행되며 시간이 더 걸릴 수 있다.
+평가기는 클래스별 20장, 총 3,020장을 생성한다. README의 기본 실행은 TA `evaluate.py` 기본 batch size인 32를 사용한다. E2b의 추가 paired-seed 수치는 별도 batch16 실험으로 측정되어 직접 섞어 비교하지 않는다. `kagglehub`는 FID 계산에는 관여하지 않지만, 고정 `dataset.py`가 이미지 디렉터리 부재 시 원본 `download_dataset.py`를 통해 자동 다운로드하므로 requirements에 포함한다. `tqdm`도 고정 `evaluate.py`의 진행률 표시 import에 필요하다. CUDA가 없는 환경에서는 CPU로 실행되며 시간이 더 걸릴 수 있다.
 
 ## 파일 구성
 
