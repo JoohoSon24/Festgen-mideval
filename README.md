@@ -9,9 +9,9 @@
 | 평가 모드 | 체크포인트 경로 | NFE | 파라미터 수 | Official FID | Valid FID | SHA256 |
 |---|---|---:|---:|---:|---:|---|
 | 1-NFE (E2b K=2, 2,000 step) | `./checkpoints/one_nfe.ckpt` | 정확히 1 | 48,883,107 | 37.87* | 54.875467 | `a2d57781111ed0e2df8c64ed1ac3ce408a02dc52943e7f6da9ba691f8b5f21a4` |
-| Few-NFE | `./checkpoints/few_nfe.ckpt` | 정확히 4 | 48,883,107 | 32.664720 | 47.703815 | `e99cb3a050c21084acb04c6d0ae80d73b225307cd232f6a8322efbedc977445d` |
+| Few-NFE | `./checkpoints/few_nfe.ckpt` | 정확히 4 | 48,883,107 | 33.1068* | 47.703815 | `e99cb3a050c21084acb04c6d0ae80d73b225307cd232f6a8322efbedc977445d` |
 
-두 모델은 각각 100M 제한 아래다. 점수 프로토콜: *37.87은 TA `evaluate.py` 기본 설정(batch 32)의 Official FID 보고값이다. E2b의 별도 seed 비교(batch 16, seed 42/1042/2042)는 38.178126 / 38.251802 / 38.754697, 평균 38.394875이며, 두 프로토콜 점수는 서로 섞어 비교하지 않는다. 54.875467은 학습 시 dev FID다. 체크포인트 SHA256은 제출물 내부 파일에서 계산했다. Few-NFE 점수는 기존 기록(Official 32.664720, Valid 47.703815)이다.
+두 모델은 각각 100M 제한 아래다. 점수 프로토콜: *1-NFE 37.87과 Few-NFE 33.1068은 TA `evaluate.py` 기본 설정(batch 32)에서 보고된 점수다. E2b의 별도 seed 비교(batch 16, seed 42/1042/2042)는 38.178126 / 38.251802 / 38.754697, 평균 38.394875다. Few-NFE의 이전 내부 Official 값 32.664720은 동일 체크포인트를 batch 16, bf16, seed=`42 + batch index`로 생성해 측정한 결과다. 샘플링 batch가 달라지면 고정 seed 호출 구성이 달라져 FID가 달라질 수 있으므로, 두 평가 프로토콜의 점수를 혼용하지 않는다. 54.875467은 NFE-1 학습 시 dev FID다. 체크포인트 SHA256은 제출물 내부 파일에서 계산했다.
 
 ## 모델 및 추론 구조
 
