@@ -1,6 +1,6 @@
 # FastGen Mid-Evaluation Submission
 
-이 디렉터리는 1-NFE와 최대 4-NFE Pokemon 생성 모델의 **평가에 필요한 전체 소스 코드와 고정 체크포인트**를 포함한다. TAs는 이 디렉터리에서 `model.py`와 `evaluate.py`를 그대로 실행할 수 있다.
+이 디렉터리는 1-NFE와 최대 4-NFE Pokemon 생성 모델의 **평가 소스, 학습 소스, 고정 체크포인트**를 포함한다. TAs는 이 디렉터리에서 `model.py`와 `evaluate.py`를 그대로 실행할 수 있다.
 
 ## 필수 체크포인트
 
@@ -8,10 +8,10 @@
 
 | 평가 모드 | 체크포인트 경로 | NFE | 파라미터 수 | Official FID | Valid FID | SHA256 |
 |---|---|---:|---:|---:|---:|---|
-| 1-NFE (E2b K=2, 2,000 step) | `./checkpoints/one_nfe.ckpt` | 정확히 1 | 48,883,107 | 37.87* | 54.875467 | `a2d57781111ed0e2df8c64ed1ac3ce408a02dc52943e7f6da9ba691f8b5f21a4` |
+| 1-NFE (E2b K=2, 2,000 step) | `./checkpoints/one_nfe.ckpt` | 정확히 1 | 48,883,107 | 37.8658* | 54.875467 | `a2d57781111ed0e2df8c64ed1ac3ce408a02dc52943e7f6da9ba691f8b5f21a4` |
 | Few-NFE | `./checkpoints/few_nfe.ckpt` | 정확히 4 | 48,883,107 | 33.1068* | 47.703815 | `e99cb3a050c21084acb04c6d0ae80d73b225307cd232f6a8322efbedc977445d` |
 
-두 모델은 각각 100M 제한 아래다. 점수 프로토콜: *1-NFE 37.87과 Few-NFE 33.1068은 TA `evaluate.py` 기본 설정(batch 32)에서 보고된 점수다. E2b의 별도 seed 비교(batch 16, seed 42/1042/2042)는 38.178126 / 38.251802 / 38.754697, 평균 38.394875다. Few-NFE의 이전 내부 Official 값 32.664720은 동일 체크포인트를 batch 16, bf16, seed=`42 + batch index`로 생성해 측정한 결과다. 샘플링 batch가 달라지면 고정 seed 호출 구성이 달라져 FID가 달라질 수 있으므로, 두 평가 프로토콜의 점수를 혼용하지 않는다. 54.875467은 NFE-1 학습 시 dev FID다. 체크포인트 SHA256은 제출물 내부 파일에서 계산했다.
+두 모델은 각각 100M 제한 아래다. 점수 프로토콜: *1-NFE 37.8658과 Few-NFE 33.1068은 TA `evaluate.py` 기본 설정(batch 32)으로 이 제출물에서 다시 측정한 결과다. E2b의 별도 seed 비교(batch 16, seed 42/1042/2042)는 38.178126 / 38.251802 / 38.754697, 평균 38.394875다. Few-NFE의 이전 내부 Official 값 32.664720은 동일 체크포인트를 batch 16, bf16, seed=`42 + batch index`로 생성해 측정한 결과다. 샘플링 batch가 달라지면 고정 seed 호출 구성이 달라져 FID가 달라질 수 있으므로, 두 평가 프로토콜의 점수를 혼용하지 않는다. 54.875467은 NFE-1 학습 시 dev FID다. 체크포인트 SHA256은 제출물 내부 파일에서 계산했다.
 
 ## 모델 및 추론 구조
 
@@ -78,6 +78,57 @@ done
 
 평가기는 클래스별 20장, 총 3,020장을 생성한다. README의 기본 실행은 TA `evaluate.py` 기본 batch size인 32를 사용한다. E2b의 추가 paired-seed 수치는 별도 batch16 실험으로 측정되어 직접 섞어 비교하지 않는다. `kagglehub`는 FID 계산에는 관여하지 않지만, 고정 `dataset.py`가 이미지 디렉터리 부재 시 원본 `download_dataset.py`를 통해 자동 다운로드하므로 requirements에 포함한다. `tqdm`도 고정 `evaluate.py`의 진행률 표시 import에 필요하다. CUDA가 없는 환경에서는 CPU로 실행되며 시간이 더 걸릴 수 있다.
 
+## 포함된 학습 코드
+
+teacher 학습·progressive distillation·NFE-1 DMD fine-tuning·NFE-4 GT-GAN fine-tuning의 실행 소스와 설정을 `training/`에 포함했다. 학습 이미지와 scratch teacher checkpoint는 번들하지 않는다. 데이터는 `download_dataset.py`로 준비하고, teacher는 아래 순서로 scratch 학습한다. 학습 코드는 과제의 train split 및 train split에서 분리한 개발 holdout만 학습·선택에 사용한다. Official reference feature는 보고용으로만 사용한다.
+
+```bash
+set -euo pipefail
+PYTHON="${PYTHON:-python3}"
+# Scratch teacher
+"$PYTHON" training/run_teacher.py \
+  --config training/source/configs/teacher/teacher_b64_noaug_constant_100k.json
+TEACHER=training_runs/teacher/teacher_b64_noaug_constant_100k/final.pt
+
+# Fixed-CFG transfer, then progressive 16 -> 8 -> 4 -> 2 -> 1 NFE distillation
+"$PYTHON" training/run_distillation.py \
+  --config training/source/configs/distillation/low_nfe_budget_100k.json \
+  --teacher-checkpoint "$TEACHER" --stage guidance \
+  --output-dir training_runs/distill/guidance
+PREV=training_runs/distill/guidance/final.pt
+for n in 16 8 4 2 1; do
+  "$PYTHON" training/run_distillation.py \
+    --config training/source/configs/distillation/low_nfe_budget_100k.json \
+    --teacher-checkpoint "$PREV" --stage "n$n" \
+    --output-dir "training_runs/distill/n$n"
+  PREV="training_runs/distill/n$n/final.pt"
+done
+
+# Export compatible inference checkpoints into the training output area
+"$PYTHON" training/export_stage.py \
+  --checkpoint training_runs/distill/n4/final.pt \
+  --output training_runs/few_nfe_progressive.ckpt --mode few_nfe
+"$PYTHON" training/export_stage.py \
+  --checkpoint training_runs/distill/n1/final.pt \
+  --output training_runs/one_nfe_progressive.ckpt --mode one_nfe
+
+# NFE-1 DMD (E2b settings); provide the scratch-trained real-score teacher
+"$PYTHON" training/train_dmd_budget.py \
+  --name E2b_n1_k2 --nfe 1 \
+  --init training_runs/one_nfe_progressive.ckpt \
+  --endpoint training_runs/few_nfe_progressive.ckpt \
+  --real "$TEACHER" --g-lr 2e-5 --fake-lr 2e-4 \
+  --reg 0.1 --k 2 --cfg 2 --steps 2500
+
+# NFE-4 GT conditional GAN fine-tuning; uses the submission few_nfe checkpoint by default
+FASTGEN_DATA_ROOT=data/pokemon-generation-one-22k \
+FASTGEN_N4_INIT_CHECKPOINT=training_runs/few_nfe_progressive.ckpt \
+FASTGEN_GAN_OUTPUT=training_runs/n4_gt_gan \
+  "$PYTHON" training/train_gt_gan.py
+```
+
+`training/train_gt_gan.py` supports short smoke runs with `FASTGEN_GAN_STEPS`, `FASTGEN_GAN_D_WARMUP`, and `FASTGEN_GAN_EVAL_STEPS`. Cached development/reference features under `training/fid_cache/` avoid any use of validation images for checkpoint selection; official features are reporting-only.
+
 ## 파일 구성
 
 ```text
@@ -92,6 +143,7 @@ done
 │   └── val_split.txt
 ├── distillation/          # sampler, DDIM/velocity helpers
 ├── teacher/               # inference UNet, diffusion schedule, CFG arithmetic
+├── training/              # teacher/distillation/DMD/GT-GAN trainers, configs, and split manifests
 ├── model.py               # 제공 base Model 및 두 NFE 제출 subclass
 ├── dataset.py             # 제공 데이터셋 코드
 ├── download_dataset.py    # 제공 데이터 다운로드 코드

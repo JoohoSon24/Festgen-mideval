@@ -1,0 +1,63 @@
+{
+  "experiment_name": "teacher_b64_noaug_constant_100k",
+  "data_root": "data/pokemon-generation-one-22k",
+  "split_dir": "data/pokemon-generation-one-22k",
+  "image_size": 64,
+  "in_channels": 3,
+  "num_classes": 151,
+  "model_channels": 96,
+  "channel_mult": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "num_res_blocks": 2,
+  "attention_resolutions": [
+    16
+  ],
+  "dropout": 0.0,
+  "batch_size": 64,
+  "gradient_accumulation": 1,
+  "num_workers": 4,
+  "learning_rate": 0.0002,
+  "weight_decay": 0.0,
+  "num_train_steps": 100000,
+  "warmup_steps": 0,
+  "grad_clip": 1.0,
+  "ema_decay": 0.9999,
+  "class_dropout": 0.1,
+  "prediction_type": "epsilon",
+  "noise_schedule": "linear",
+  "diffusion_steps": 1000,
+  "beta_start": 0.0001,
+  "beta_end": 0.02,
+  "sample_steps": 50,
+  "guidance_scale": 1.0,
+  "amp_dtype": "bf16",
+  "seed": 42,
+  "log_interval": 20,
+  "save_interval": 500,
+  "sample_interval": 1000,
+  "output_dir": "training_runs/teacher",
+  "horizontal_flip_probability": 0.0,
+  "augmentation_degrees": 0.0,
+  "augmentation_translate": 0.0,
+  "augmentation_scale_delta": 0.0,
+  "learning_rate_schedule": "constant",
+  "extra_ema_decays": [
+    0.999
+  ],
+  "train_manifest": "training/data/development/seed42_holdout5/train.txt",
+  "development_reference_manifest": "training/data/development/seed42_holdout5/holdout.txt",
+  "sample_sampler": "ddpm",
+  "sample_clip_denoised": true,
+  "diagnostic_interval": 5000,
+  "diagnostic_labels": [
+    0,
+    13,
+    103,
+    133
+  ],
+  "activation_checkpoint_resolutions": []
+}

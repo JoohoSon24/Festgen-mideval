@@ -1,0 +1,30 @@
+{
+  "method": "fixed_cfg_then_progressive",
+  "guidance_scale": 2.0,
+  "initial_steps": 32,
+  "guidance_updates": 50000,
+  "progressive_updates": 100000,
+  "student_steps": [16, 8, 4, 2, 1],
+  "batch_size": 64,
+  "num_workers": 4,
+  "learning_rate": 0.0002,
+  "ema_decay": 0.999,
+  "grad_clip": 1.0,
+  "seed": 42,
+  "prediction_type": "v",
+  "loss_weighting": "truncated_snr",
+  "amp_dtype": "bf16",
+  "log_interval": 20,
+  "save_interval": 500,
+  "sample_interval": 1000,
+  "guidance_gate_max_fid_increase": 15.0,
+  "teacher_candidates": [
+    "experiments/teacher_b64_fliponly_constant_100k",
+    "experiments/teacher_b64_noaug_constant_100k"
+  ],
+  "output_dir": "experiments/low_nfe_budget_100k",
+  "learning_rate_schedule": "constant",
+  "warmup_steps": 0,
+  "milestone_steps": [50000, 75000],
+  "evaluation_steps": [50000, 75000, 100000]
+}
