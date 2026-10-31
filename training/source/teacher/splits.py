@@ -7,6 +7,11 @@ import hashlib
 import json
 from pathlib import Path
 import random
+import sys
+
+# Support both ``python -m teacher.splits`` and direct execution by file path.
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from dataset import category_from_filename, read_split
 

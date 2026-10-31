@@ -85,6 +85,12 @@ teacher 학습·progressive distillation·NFE-1 DMD fine-tuning·NFE-4 GT-GAN fi
 ```bash
 set -euo pipefail
 PYTHON="${PYTHON:-python3}"
+# Recreate the 5-per-class development holdout using only official train_split.txt.
+"$PYTHON" training/source/teacher/splits.py \
+  --split-dir data/pokemon-generation-one-22k \
+  --output-dir training/data/development/seed42_holdout5 \
+  --per-class 5 --seed 42
+
 # Scratch teacher
 "$PYTHON" training/run_teacher.py \
   --config training/source/configs/teacher/teacher_b64_noaug_constant_100k.json
